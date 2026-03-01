@@ -108,9 +108,14 @@ async function loadEnclaveInfo() {
     const data = await r.json();
     enclaveAddress = data.address;
     enclavePublicKey = data.public_key;
+    const REGISTRY = '0x0f68E6e699f2E972998a1EcC000c7ce103E64cc8';
+    const APP_ID = 65;
+    const INSTANCE_ID = 121;
     document.getElementById('enclave-info').innerHTML =
       '<div><span class="label">Enclave Address: </span><span class="value">' + enclaveAddress + '</span></div>' +
-      '<div style="margin-top:4px"><span class="label">Public Key: </span><span class="value">' + enclavePublicKey + '</span></div>';
+      '<div style="margin-top:4px"><span class="label">Public Key: </span><span class="value">' + enclavePublicKey + '</span></div>' +
+      '<div style="margin-top:8px"><span class="label">On-Chain App ID: </span><span class="value">' + APP_ID + '</span> · <span class="label">Instance ID: </span><span class="value">' + INSTANCE_ID + '</span></div>' +
+      '<div style="margin-top:4px"><span class="label">Registry Contract: </span><a href="https://sepolia.basescan.org/address/' + REGISTRY + '" target="_blank" style="color:#58a6ff">' + REGISTRY + '</a></div>';
   } catch(e) {
     document.getElementById('enclave-info').innerHTML = '<span class="label">Failed to load enclave info</span>';
   }
