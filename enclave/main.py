@@ -30,10 +30,9 @@ def chat(req: ChatRequest):
     response_text = "Hi!"
 
     # Sign the response so clients can verify it came from this enclave
-    msg_hex = "0x" + response_text.encode().hex()
     sign_resp = httpx.post(
         f"{ODYN_BASE}/v1/eth/sign",
-        json={"data": msg_hex},
+        json={"message": response_text},
         timeout=10,
     )
     sign_resp.raise_for_status()
@@ -42,7 +41,6 @@ def chat(req: ChatRequest):
     return {
         "response": response_text,
         "signature": sig_data["signature"],
-        "msg_hex": msg_hex,
     }
 
 
@@ -131,12 +129,9 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-async function verifySignature(msgHex, signature) {
+async function verifySignature(message, signature) {
   try {
-    // Convert hex message back to bytes then to the signed message format
-    const msgBytes = ethers.getBytes(msgHex);
-    // ethers v6: recover the address from the signature
-    const recoveredAddress = ethers.verifyMessage(msgBytes, signature);
+    const recoveredAddress = ethers.verifyMessage(message, signature);
     const match = recoveredAddress.toLowerCase() === enclaveAddress.toLowerCase();
     return {
       valid: match,
@@ -164,7 +159,7 @@ async function sendMessage() {
     });
     const data = await r.json();
 
-    const verification = await verifySignature(data.msg_hex, data.signature);
+    const verification = await verifySignature(data.response, data.signature);
 
     let sigHtml = '<div class="sig-box">' +
       '<div><span class="label">Signature: </span><span class="value">' + data.signature + '</span></div>' +
