@@ -24,6 +24,23 @@ def enclave_info():
     return r.json()
 
 
+@app.get("/api/onchain-info")
+def onchain_info():
+    """Return on-chain registration info from Nova Platform API."""
+    app_sqid = "djqrgt"
+    try:
+        r = httpx.get(f"https://sparsity.cloud/api/apps/{app_sqid}/status", timeout=15)
+        r.raise_for_status()
+        data = r.json()
+        return {
+            "app_id": data.get("onchain_app_id"),
+            "instance_id": data.get("latest_onchain_instance_id"),
+            "registry": "0x0f68E6e699f2E972998a1EcC000c7ce103E64cc8",
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/api/chat")
 def chat(req: ChatRequest):
     """Always respond with Hi! and sign the response with the enclave key."""
@@ -108,16 +125,27 @@ async function loadEnclaveInfo() {
     const data = await r.json();
     enclaveAddress = data.address;
     enclavePublicKey = data.public_key;
-    const REGISTRY = '0x0f68E6e699f2E972998a1EcC000c7ce103E64cc8';
-    const APP_ID = 65;
-    const INSTANCE_ID = 121;
     document.getElementById('enclave-info').innerHTML =
       '<div><span class="label">Enclave Address: </span><span class="value">' + enclaveAddress + '</span></div>' +
       '<div style="margin-top:4px"><span class="label">Public Key: </span><span class="value">' + enclavePublicKey + '</span></div>' +
-      '<div style="margin-top:8px"><span class="label">On-Chain App ID: </span><span class="value">' + APP_ID + '</span> · <span class="label">Instance ID: </span><span class="value">' + INSTANCE_ID + '</span></div>' +
-      '<div style="margin-top:4px"><span class="label">Registry Contract: </span><a href="https://sepolia.basescan.org/address/' + REGISTRY + '" target="_blank" style="color:#58a6ff">' + REGISTRY + '</a></div>';
+      '<div id="onchain-info" style="margin-top:8px"><span class="label">Loading on-chain info...</span></div>';
+    loadOnChainInfo();
   } catch(e) {
     document.getElementById('enclave-info').innerHTML = '<span class="label">Failed to load enclave info</span>';
+  }
+}
+
+async function loadOnChainInfo() {
+  try {
+    const r = await fetch('/api/onchain-info');
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    const el = document.getElementById('onchain-info');
+    el.innerHTML =
+      '<div><span class="label">On-Chain App ID: </span><span class="value">' + data.app_id + '</span> · <span class="label">Instance ID: </span><span class="value">' + data.instance_id + '</span></div>' +
+      '<div style="margin-top:4px"><span class="label">Registry Contract: </span><a href="https://sepolia.basescan.org/address/' + data.registry + '" target="_blank" style="color:#58a6ff">' + data.registry + '</a></div>';
+  } catch(e) {
+    document.getElementById('onchain-info').innerHTML = '<span class="label">On-chain info unavailable</span>';
   }
 }
 
